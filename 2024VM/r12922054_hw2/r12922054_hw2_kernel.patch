@@ -1,0 +1,99 @@
+diff --git a/arch/arm64/kvm/mmio.c b/arch/arm64/kvm/mmio.c
+index 3e2d8ba11..8d5d60ab6 100644
+--- a/arch/arm64/kvm/mmio.c
++++ b/arch/arm64/kvm/mmio.c
+@@ -8,8 +8,64 @@
+ #include <asm/kvm_emulate.h>
+ #include <trace/events/kvm.h>
+ 
++#include <asm/kvm_pgtable.h>
++#include <asm/stage2_pgtable.h>
++
+ #include "trace.h"
+ 
++#define HIDE_ADDRESS 0x0b000000
++#define SEEK_ADDRESS 0x0b000001
++#define CUSTOM_GPA   0x40000000
++
++static int kvm_leaf_walker_HIDE(u64 addr, u64 end, u32 level, kvm_pte_t *ptep,
++		       enum kvm_pgtable_walk_flags flag, void * const arg)
++{
++	u8 *hide_value = arg;
++	*ptep &= ~(0xFFULL << 51);
++	*ptep |= ((u64)*hide_value << 51);
++	printk(KERN_INFO "KVM: Modified stage-2 PTE for GPA 0x40000000, hide_value = 0x%x\n", *hide_value);
++	return 0;
++}
++
++static int kvm_leaf_walker_SEEK(u64 addr, u64 end, u32 level, kvm_pte_t *ptep,
++		       enum kvm_pgtable_walk_flags flag, void * const arg)
++{
++	u8 *seek_value = arg;
++	*seek_value = (*ptep >> 51) & 0xFF;
++	// *ptep &= ~(0xFFULL << 51);  /// empty page table [58:51]
++	printk(KERN_INFO "KVM: Read stage-2 PTE for GPA 0x40000000, seek_value = 0x%x\n", *seek_value);
++	return 0;
++}
++
++void kvm_pgtable_mmio_HIDE(struct kvm_pgtable *pgt, u64 addr, u8 *hide_value)
++{
++	struct kvm_pgtable_walker HIDE_walker = {
++		.cb = kvm_leaf_walker_HIDE,
++		.flags = KVM_PGTABLE_WALK_LEAF,
++		.arg = hide_value,
++	};
++
++	int ret;
++
++	ret = kvm_pgtable_walk(pgt, ALIGN_DOWN(addr, PAGE_SIZE),
++			       PAGE_SIZE, &HIDE_walker);
++}
++
++void kvm_pgtable_mmio_SEEK(struct kvm_pgtable *pgt, u64 addr, u8 *seek_value)
++{
++	struct kvm_pgtable_walker SEEK_walker = {
++		.cb = kvm_leaf_walker_SEEK,
++		.flags = KVM_PGTABLE_WALK_LEAF,
++		.arg = seek_value,
++	};
++
++	int ret;
++
++	ret = kvm_pgtable_walk(pgt, ALIGN_DOWN(addr, PAGE_SIZE),
++			       PAGE_SIZE, &SEEK_walker);
++}
++
++
+ void kvm_mmio_write_buf(void *buf, unsigned int len, unsigned long data)
+ {
+ 	void *datap = NULL;
+@@ -84,6 +140,29 @@ int kvm_handle_mmio_return(struct kvm_vcpu *vcpu)
+ 	unsigned int len;
+ 	int mask;
+ 
++
++
++	struct kvm_run *run = vcpu->run;
++	phys_addr_t addr = run->mmio.phys_addr;  
++    u8 *mmio_data = run->mmio.data;
++    bool is_write = run->mmio.is_write;
++
++	if (addr == HIDE_ADDRESS && is_write) {
++		struct kvm *kvm = vcpu->kvm;
++		struct kvm_pgtable *pgt = kvm->arch.mmu.pgt;
++
++        printk(KERN_INFO "KVM: HIDE register written with value: 0x%x\n", *mmio_data);
++		kvm_pgtable_mmio_HIDE(pgt, CUSTOM_GPA, mmio_data);
++
++    } else if (addr == SEEK_ADDRESS && !is_write) {
++		struct kvm *kvm = vcpu->kvm;
++		struct kvm_pgtable *pgt = kvm->arch.mmu.pgt;
++
++		kvm_pgtable_mmio_SEEK(pgt, CUSTOM_GPA, mmio_data);
++        printk(KERN_INFO "KVM: SEEK register read, value: 0x%x\n", *mmio_data);
++    }
++	
++
+ 	/* Detect an already handled MMIO return */
+ 	if (unlikely(!vcpu->mmio_needed))
+ 		return 0;

